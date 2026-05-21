@@ -1,0 +1,95 @@
+pipeline {
+    agent none
+
+    stages {
+
+        stage('Check & Setup App Server') {
+            agent { label 'built-in' }
+
+            steps {
+                checkout scm   // ✅ important
+
+                script {
+                    def dockerExists = sh(
+                        script: 'which docker || true',
+                        returnStdout: true
+                    ).trim()
+
+                    if (dockerExists == "") {
+                        echo "Docker not found. Running Ansible setup..."
+
+                        sh '''
+                        ansible-playbook -i inventories/app.ini playbooks/appsetup.yml
+                        '''
+                    } else {
+                        echo "Docker already installed. Skipping Ansible setup."
+                    }
+                }
+            }
+        }
+
+        stage('Deploy App') {
+            agent { label 'app' }
+
+            steps {
+                checkout scm   // ✅ required for docker-compose.yml
+
+                sh '''
+                cd app
+                docker compose down || true
+                docker compose build
+                docker compose up -d
+                '''
+            }
+        }
+
+        stage('Check & Setup Nginx Server') {
+            agent { label 'built-in' }
+
+            steps {
+                checkout scm   // ✅ important
+
+                script {
+                    def dockerExists = sh(
+                        script: 'which docker || true',
+                        returnStdout: true
+                    ).trim()
+
+                    if (dockerExists == "") {
+                        echo "Docker not found on NGINX. Running Ansible setup..."
+
+                        sh '''
+                        ansible-playbook -i inventories/nginx.ini playbooks/nginxsetup.yml
+                        '''
+                    } else {
+                        echo "Docker already installed on NGINX. Skipping setup."
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Nginx') {
+            agent { label 'web' }
+
+            steps {
+                checkout scm   // ✅ required
+
+                sh '''
+                cd nginx
+                docker compose down || true
+                docker compose build
+                docker compose up -d
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment Successful 🚀"
+        }
+        failure {
+            echo "Deployment Failed ❌"
+        }
+    }
+}

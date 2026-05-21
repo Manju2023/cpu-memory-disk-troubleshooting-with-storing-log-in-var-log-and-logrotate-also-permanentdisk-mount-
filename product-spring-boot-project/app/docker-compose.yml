@@ -1,0 +1,14 @@
+services:
+  springboot-app:
+    container_name: productapp
+    build:
+      context: ..          # 👈 IMPORTANT (go to root)
+      dockerfile: Dockerfile
+    environment:
+      SPRING_APPLICATION_NAME: kiransircrudspring
+      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/product13
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Manju@2022
+    ports:
+      - "8080:8083"
+    restart: always 
