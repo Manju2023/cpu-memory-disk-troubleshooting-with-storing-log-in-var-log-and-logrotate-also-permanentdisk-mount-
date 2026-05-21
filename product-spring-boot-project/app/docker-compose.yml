@@ -1,14 +1,55 @@
+version: "3.9"
+
 services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-container
+
+    environment:
+      MYSQL_ROOT_PASSWORD: Manju@2022
+      MYSQL_DATABASE: product13
+
+    ports:
+      - "3306:3306"
+
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+    restart: always
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pManju@2022"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+
   springboot-app:
     container_name: productapp
+
     build:
-      context: ..          # 👈 IMPORTANT (go to root)
+      context: .
       dockerfile: Dockerfile
+
     environment:
       SPRING_APPLICATION_NAME: kiransircrudspring
-      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/product13
+
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/product13
+
       SPRING_DATASOURCE_USERNAME: root
+
       SPRING_DATASOURCE_PASSWORD: Manju@2022
+
     ports:
       - "8080:8083"
-    restart: always 
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    restart: always
+
+volumes:
+  mysql-data:
