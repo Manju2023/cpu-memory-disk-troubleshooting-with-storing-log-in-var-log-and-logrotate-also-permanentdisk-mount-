@@ -30,7 +30,7 @@ services:
     container_name: productapp
 
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
 
     environment:
